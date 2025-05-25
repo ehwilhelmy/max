@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -34,6 +34,7 @@ const AskMax = () => {
   const [awaitingFinalConfirm, setAwaitingFinalConfirm] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const mockAddresses = [
     '123 Main St, Miami FL',
     '456 Oak Ave, Orlando FL',
@@ -42,6 +43,7 @@ const AskMax = () => {
     '202 Elm St, St. Petersburg FL',
   ];
   const navigate = useNavigate();
+  const [visibleMessages, setVisibleMessages] = useState<number[]>([]);
 
   const suggestions = [
     'offer a referral client',
@@ -153,6 +155,31 @@ const AskMax = () => {
     return prompt.trim();
   }
 
+  // Scroll to bottom when conversation changes
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [conversation]);
+
+  // When chat step is entered, show all existing messages
+  useEffect(() => {
+    if (step === 'chat' && conversation.length > 0 && visibleMessages.length === 0) {
+      setVisibleMessages(Array.from({ length: conversation.length }, (_, i) => i));
+    } else if (conversation.length > 0) {
+      // Find all unseen message indices
+      const unseen = conversation
+        .map((_, i) => i)
+        .filter(i => !visibleMessages.includes(i));
+      if (unseen.length > 0) {
+        const timeout = setTimeout(() => {
+          setVisibleMessages((prev) => [...prev, ...unseen]);
+        }, 120);
+        return () => clearTimeout(timeout);
+      }
+    }
+  }, [step, conversation, visibleMessages]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200">
@@ -232,23 +259,29 @@ const AskMax = () => {
           </div>
         )}
         {step === 'chat' && (
-          <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg border border-gray-200 p-0 mb-8 flex flex-col items-stretch h-[600px]">
+          <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl border border-gray-200 p-0 mb-8 flex flex-col items-stretch relative py-6">
             {/* Chat area, scrollable if needed */}
-            <div className="flex-1 flex flex-col justify-end overflow-y-auto px-6 pt-0 pb-2">
+            <div className="flex-1 flex flex-col justify-end px-6 pt-0 pb-2 min-h-[200px] max-h-[500px] overflow-y-scroll scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-blue-50">
               {conversation.map((msg, idx) => {
+                const isVisible = visibleMessages.includes(idx);
+                const transitionClass = isVisible
+                  ? 'opacity-100 translate-y-0 transition-all duration-500'
+                  : 'opacity-0 translate-y-4';
                 if (msg.sender === 'agent') {
                   return (
-                    <div key={idx} className="flex justify-end items-start mt-0 mb-2">
+                    <div key={idx} className={`flex justify-end items-start mt-0 mb-2 ${transitionClass}` }>
                       <div className="bg-blue-50 text-blue-900 px-4 py-2 rounded-lg max-w-xs text-right">
                         {msg.text}
                       </div>
-                      <img src="/avatar-placeholder.png" alt="Agent Avatar" className="w-8 h-8 rounded-full ml-2 border border-gray-200 object-cover" />
+                      <div className="w-8 h-8 rounded-full ml-2 flex items-center justify-center bg-blue-600 text-white font-bold text-base border border-gray-200">
+                        JW
+                      </div>
                     </div>
                   );
                 }
                 if (msg.type === 'details') {
                   return (
-                    <div key={idx} className="flex justify-start mb-2">
+                    <div key={idx} className={`flex justify-start mb-2 ${transitionClass}` }>
                       <div className="bg-gray-100 px-4 py-3 rounded-lg max-w-md">
                         <div className="flex items-center mb-2">
                           <img src="/max-flag.png" alt="MAX Flag" className="w-5 h-5 mr-2" />
@@ -275,7 +308,7 @@ const AskMax = () => {
                 if (msg.type === 'ask') {
                   let label = msg.field === 'price' ? 'What is the listing price?' : 'What are the listing contract dates?';
                   return (
-                    <div key={idx} className="flex justify-start mb-2">
+                    <div key={idx} className={`flex justify-start mb-2 ${transitionClass}` }>
                       <div className="bg-gray-100 px-4 py-3 rounded-lg max-w-md">
                         <div className="flex items-center mb-2">
                           <img src="/max-flag.png" alt="MAX Flag" className="w-5 h-5 mr-2" />
@@ -287,7 +320,7 @@ const AskMax = () => {
                 }
                 if (msg.type === 'finalConfirm') {
                   return (
-                    <div key={idx} className="flex justify-start mb-2">
+                    <div key={idx} className={`flex justify-start mb-2 ${transitionClass}` }>
                       <div className="bg-gray-100 px-4 py-3 rounded-lg max-w-md">
                         <div className="flex items-center mb-2">
                           <img src="/max-flag.png" alt="MAX Flag" className="w-5 h-5 mr-2" />
@@ -299,7 +332,7 @@ const AskMax = () => {
                 }
                 if (msg.type === 'summary') {
                   return (
-                    <div key={idx} className="flex justify-start mb-2">
+                    <div key={idx} className={`flex justify-start mb-2 ${transitionClass}` }>
                       <div className="bg-gray-100 px-4 py-3 rounded-lg max-w-md">
                         <div className="flex items-center mb-2">
                           <img src="/max-flag.png" alt="MAX Flag" className="w-5 h-5 mr-2" />
@@ -311,6 +344,7 @@ const AskMax = () => {
                 }
                 return null;
               })}
+              <div ref={chatEndRef} />
             </div>
             {/* MAX is waiting bar and chat input anchored to bottom */}
             {showContinue ? (
@@ -327,7 +361,7 @@ const AskMax = () => {
               <div className="w-full border-t border-gray-200 px-0 pb-0 flex flex-col">
                 {/* Suggestion logic for price and contract dates - now above blue bar */}
                 {currentField === 'price' && (
-                  <div className="px-6 pt-4 flex items-center gap-2 flex-wrap">
+                  <div className="px-6 py-4 flex items-center gap-2 flex-wrap">
                     <span className="text-gray-600 text-sm mr-2">Suggested:</span>
                     {[410000, 420000, 430000].map((price, idx) => (
                 <Button
@@ -352,7 +386,7 @@ const AskMax = () => {
                   </div>
                 )}
                 {currentField === 'listingDates' && (
-                  <div className="px-6 pt-4 flex items-center gap-2">
+                  <div className="px-6 py-4 flex items-center gap-2">
                     <span className="text-gray-600 text-sm mr-2">Suggested:</span>
                     <Button
                       variant="outline"

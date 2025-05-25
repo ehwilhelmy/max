@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, Calendar, Inbox } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ArrowLeft, Calendar, Image as ImageIcon, Maximize2, Minimize2 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,6 +20,7 @@ export interface ListingData {
   listingDates: string;
   status: string;
   unique: string;
+  description: string;
 }
 
 const NewListing = () => {
@@ -35,17 +36,20 @@ const NewListing = () => {
     price: '',
     listingDates: '',
     status: 'Draft',
-    unique: ''
+    unique: '',
+    description: '',
   };
   const initialPhotos = (location.state && location.state.listing && location.state.listing.photos && location.state.listing.photos.length > 0)
     ? location.state.listing.photos
     : [];
   const [activeTab, setActiveTab] = useState('overview');
   const [showPreview, setShowPreview] = useState(true);
+  const [previewExpanded, setPreviewExpanded] = useState(false);
   const [listingData, setListingData] = useState<ListingData>(initialListing);
   const [photos, setPhotos] = useState<(string | ArrayBuffer | null)[]>(
     initialPhotos.length > 0 ? initialPhotos : demoPhotos
   );
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -114,7 +118,7 @@ const NewListing = () => {
               asChild
             >
               <Link to="/ask-max">
-                <span className="mr-2">✨</span>
+                <span className="mr-2 text-blue-500">✨</span>
                 Ask MAX
               </Link>
             </Button>
@@ -126,7 +130,10 @@ const NewListing = () => {
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row gap-6">
           {/* Form section */}
-          <div className={`${showPreview ? 'flex-1' : 'w-full'} transition-all duration-300`}>
+          <div
+            className={`transition-all duration-500 ease-in-out ${showPreview && !previewExpanded ? 'md:w-2/3 w-full' : 'w-full'} ${previewExpanded ? 'hidden md:block w-0' : ''}`}
+            style={{ transitionProperty: 'width, flex, opacity' }}
+          >
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="overview" className="relative">
@@ -168,12 +175,23 @@ const NewListing = () => {
             <div className="mb-8 mt-8">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-lg font-medium">Photos</span>
-                <label>
-                  <input type="file" multiple accept="image/*" className="hidden" onChange={handleAddPhotos} />
-                  <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50 flex items-center gap-2" asChild={false}>
-                    <Inbox className="w-4 h-4" /> Add photos
-                  </Button>
-                </label>
+                <input
+                  id="listing-photos-upload"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  ref={photoInputRef}
+                  onChange={handleAddPhotos}
+                />
+                <Button
+                  variant="outline"
+                  className="border-blue-200 text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+                  asChild={false}
+                  onClick={() => photoInputRef.current && photoInputRef.current.click()}
+                >
+                  <ImageIcon className="w-4 h-4" /> Add photos
+                </Button>
               </div>
               <div className="flex flex-wrap gap-6">
                 {photos.map((photo, idx) => (
@@ -224,37 +242,40 @@ const NewListing = () => {
             </div>
           </div>
 
-          {/* Preview section */}
-          {showPreview && (
-            <div className="w-full md:w-96">
-              <div className="sticky top-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Preview listing</h3>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => setShowPreview(false)}
-                  >
-                    Hide Preview
-                  </Button>
+          {/* Preview section (always visible, can expand/collapse) */}
+          <div
+            className={`transition-all duration-500 ease-in-out ${previewExpanded ? 'w-full' : 'md:w-1/3 w-full'}`}
+            style={{ transitionProperty: 'width, flex, opacity' }}
+          >
+            <div className="sticky top-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Preview listing</h3>
+                <div className="flex gap-2">
+                  {!previewExpanded && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPreviewExpanded(true)}
+                      aria-label="Expand preview"
+                    >
+                      <Maximize2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {previewExpanded && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPreviewExpanded(false)}
+                      aria-label="Collapse preview"
+                    >
+                      <Minimize2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
-                <ListingPreview data={listingData} photos={photos} />
               </div>
+              <ListingPreview data={listingData} photos={photos} />
             </div>
-          )}
-
-          {/* Show preview button when hidden */}
-          {!showPreview && (
-            <div className="fixed right-6 top-1/2 transform -translate-y-1/2">
-              <Button 
-                variant="outline"
-                onClick={() => setShowPreview(true)}
-                className="writing-mode-vertical"
-              >
-                Show Preview
-              </Button>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from 'lucide-react';
+import { Calendar, Sparkles } from 'lucide-react';
 import { ListingData } from '@/pages/NewListing';
 
 interface OverviewFormProps {
@@ -141,6 +141,30 @@ const OverviewForm = ({ data, onChange, missingFields }: OverviewFormProps) => {
         {isMissing('listingDates') && (
           <p className="text-red-600 text-sm">Missing data</p>
         )}
+      </div>
+
+      {/* Description with AI generator */}
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <textarea
+          id="listing-description"
+          className="w-full min-h-[100px] border border-gray-300 rounded-md p-2 bg-gray-50"
+          value={data.description}
+          onChange={e => updateField('description', e.target.value)}
+          placeholder="Enter a compelling property description..."
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+          onClick={() => {
+            // Mock AI call: generate a description based on form data
+            const desc = `Welcome to ${data.address}! This beautiful ${data.bedrooms}-bed, ${data.bathrooms}-bath ${data.propertyType.toLowerCase()} offers ${data.livingArea} of living space on a ${data.lotArea} lot. Built in ${data.yearBuilt}, it combines modern comfort with timeless charm. Schedule a tour today!`;
+            updateField('description', desc);
+          }}
+        >
+          <Sparkles className="inline w-4 h-4 mr-2 text-blue-400" /> Generate with AI
+        </Button>
       </div>
     </div>
   );
