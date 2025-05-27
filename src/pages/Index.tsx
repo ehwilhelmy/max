@@ -14,6 +14,7 @@ const Index = () => {
   useEffect(() => {
     const stored = localStorage.getItem('maxdata_listings');
     setListings(stored ? JSON.parse(stored) : []);
+    // Only show confetti if a listing was just published (not for drafts or other actions)
     if (location.search.includes('published=1')) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2500);
@@ -29,9 +30,16 @@ const Index = () => {
     ? listings
     : listings.filter(l => (l.status || 'Draft') === filter);
 
+  // Get cart count from the most recent published listing (if any)
+  let cartCount = 0;
+  const published = listings.filter(l => l.status === 'Published');
+  if (published.length > 0 && Array.isArray(published[published.length - 1].cart)) {
+    cartCount = published[published.length - 1].cart.length;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header cartCount={cartCount} />
       <main className="container mx-auto px-4 py-8">
         {showConfetti && <Confetti width={windowSize.width} height={windowSize.height} />} 
         {showConfetti && (
@@ -39,32 +47,43 @@ const Index = () => {
             Listing published!
           </div>
         )}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-semibold text-gray-800 mb-2">My listings</h1>
-        </div>
-        {/* Filter buttons only if there are listings */}
-        {listings.length > 0 && (
-          <div className="flex gap-4 mb-6 justify-center">
-            <button
-              className={`px-4 py-2 rounded ${filter === 'All' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              onClick={() => setFilter('All')}
-            >
-              All
-            </button>
-            <button
-              className={`px-4 py-2 rounded ${filter === 'Published' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              onClick={() => setFilter('Published')}
-            >
-              Published
-            </button>
-            <button
-              className={`px-4 py-2 rounded ${filter === 'Draft' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              onClick={() => setFilter('Draft')}
-            >
-              Draft
-            </button>
+        <div className="flex flex-col gap-2 mb-8">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-6">
+              <h1 className="text-3xl font-semibold text-gray-800 mb-0">My listings</h1>
+              {listings.length > 0 && (
+                <div className="flex gap-2">
+                  <button
+                    className={`px-4 py-2 rounded ${filter === 'All' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                    onClick={() => setFilter('All')}
+                  >
+                    All
+                  </button>
+                  <button
+                    className={`px-4 py-2 rounded ${filter === 'Published' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                    onClick={() => setFilter('Published')}
+                  >
+                    Published
+                  </button>
+                  <button
+                    className={`px-4 py-2 rounded ${filter === 'Draft' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                    onClick={() => setFilter('Draft')}
+                  >
+                    Draft
+                  </button>
+                </div>
+              )}
+            </div>
+            {filteredListings.length > 0 && (
+              <button
+                className="bg-blue-900 hover:bg-blue-800 text-white px-5 py-2 rounded-lg font-semibold flex items-center gap-2 shadow"
+                onClick={() => window.location.href = '/create-listing'}
+              >
+                <span className="text-lg font-bold">+</span> Create listing
+              </button>
+            )}
           </div>
-        )}
+        </div>
         {filteredListings.length === 0 ? (
         <EmptyState />
         ) : (

@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Sparkles } from 'lucide-react';
 import { ListingData } from '@/pages/NewListing';
+import { Calendar as DatePicker } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
 
 interface OverviewFormProps {
   data: ListingData;
@@ -17,6 +20,13 @@ const OverviewForm = ({ data, onChange, missingFields }: OverviewFormProps) => {
   };
 
   const isMissing = (field: string) => missingFields.includes(field);
+
+  // Helper to check if a date string is valid
+  function isValidDateString(dateStr: string | undefined): boolean {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    return !isNaN(d.getTime());
+  }
 
   return (
     <div className="space-y-6">
@@ -128,16 +138,29 @@ const OverviewForm = ({ data, onChange, missingFields }: OverviewFormProps) => {
       {/* Listing contract dates */}
       <div className="space-y-2">
         <Label htmlFor="listingDates">Listing contract dates</Label>
-        <div className={`flex items-center space-x-2 p-3 border rounded-md ${isMissing('listingDates') ? 'border-red-500' : 'border-gray-300'}`}>
-          <Calendar className="w-4 h-4 text-gray-500" />
-          <Input
-            id="listingDates"
-            placeholder="Select dates"
-            value={data.listingDates}
-            onChange={(e) => updateField('listingDates', e.target.value)}
-            className="border-0 p-0 focus:ring-0"
-          />
-        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={`w-full justify-start text-left font-normal ${isMissing('listingDates') ? 'border-red-500' : ''}`}
+            >
+              <Calendar className="mr-2 h-4 w-4 text-gray-500" />
+              {isValidDateString(data.listingDates)
+                ? format(new Date(data.listingDates), 'PPP')
+                : <span className="text-gray-400">Select date</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <DatePicker
+              mode="single"
+              selected={isValidDateString(data.listingDates) ? new Date(data.listingDates) : undefined}
+              onSelect={date => {
+                if (date) updateField('listingDates', date.toISOString());
+              }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
         {isMissing('listingDates') && (
           <p className="text-red-600 text-sm">Missing data</p>
         )}

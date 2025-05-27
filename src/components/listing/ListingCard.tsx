@@ -1,5 +1,6 @@
 import { Bed, Bath, Ruler, Home, MoreVertical } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import demoPhotos from '../../demoPhotos.json';
 
 interface ListingCardProps {
@@ -8,6 +9,7 @@ interface ListingCardProps {
 
 const ListingCard = ({ listing }: ListingCardProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
   const mainPhoto = listing.photos && listing.photos[0];
   const status = listing.status || 'Draft';
   // Parse address
@@ -41,7 +43,7 @@ const ListingCard = ({ listing }: ListingCardProps) => {
             </button>
             {menuOpen && (
               <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow z-10">
-                <button className="block w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => { setMenuOpen(false); /* TODO: Edit action */ }}>Edit</button>
+                <button className="block w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => { setMenuOpen(false); navigate('/new-listing', { state: { listing } }); }}>Edit</button>
                 {status === 'Published' && (
                   <button className="block w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => { setMenuOpen(false); /* TODO: Move to Draft action */ }}>Move to Draft</button>
                 )}

@@ -1,8 +1,9 @@
-
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { ArrowRight, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const EmptyState = () => {
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       {/* Cactus Illustration */}
@@ -54,8 +55,11 @@ const EmptyState = () => {
         </p>
       </div>
 
-      {/* Create listing button */}
-      <Button className="bg-blue-900 hover:bg-blue-800 text-white px-6 py-2 rounded-md flex items-center space-x-2">
+      {/* Create listing button CTA */}
+      <Button
+        className="bg-blue-900 hover:bg-blue-800 text-white px-6 py-2 rounded-md flex items-center gap-2 mt-6"
+        onClick={() => navigate('/create-listing')}
+      >
         <Plus className="w-4 h-4" />
         <span>Create listing</span>
       </Button>
